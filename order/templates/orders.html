@@ -8,10 +8,10 @@
 </head>
 <body>
     <h1>Список заказов</h1>
-    {% for order in orders %}
+    {% for object in object_list %}
         <p>
-            <a href="{% url 'detail_order' order.id %}">
-                Order Id: {{ order.id }}
+            <a href="{% url 'detail_order' object.id %}">
+                Order Id: {{ object.id }}
             </a> 
         </p>
     {% endfor %}

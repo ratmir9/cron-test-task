@@ -8,9 +8,16 @@
 </head>
 <body>
     <h1>Описание закаэа</h1>
-    <p>Наименование товара: {{ order.product }}</p>
-    <p>Тип товара: {{ order.product.type }}</p>
+    <p>Наименование товара: {{ order.product_name }}</p>
+    <p>Тип товара: {{ order.product_type }}</p>
     <p>Дата доставки: {{ order.delivery_date }}</p>
-    <a href="{{ order.issuing_addresses_file.url }}" download>Адреса пункта выдачи</a>
+    <h3>Адресв пунктов выдачи</h3>
+    
+    {% for address in order.addresses.all %}
+        <p>{{ address.title }}</p>
+    {% endfor %}
+        
+    <a href="{{ order.addresses_file.url }}" download>Адреса пункта выдачи</a>
+    <p>Дата создания заказа: {{ order.create_at }}</p>
 </body>
 </html>

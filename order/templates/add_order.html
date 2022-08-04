@@ -8,10 +8,24 @@
 </head>
 <body>
     <h1>Оформление заказа</h1>
-    <form action="" method="POST">
-        {% csrf_token %} 
-        {{ form.as_p }}
-        <button type="submit">Оформит заказ</button>
+    <form action="" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% for field in  form %}
+            {{ field.errors }}
+            {{ field.label_tag }}
+            <p>{{ field }}</p>
+        {% endfor %}
+        {{ form.addresses.management_form }}
+        <h3>Добавьте адреса пункта выдачи</h3>
+        
+        {% for address in form.addresses %}
+            {{ address.errors }}
+            {{ address.title.label_tag}}
+            <p>{{ address.errors }}</p>
+            <p>{{ address.title }}</p>
+        {% endfor %}
+            
+     <button type="submit">Оформить заказ</button>       
     </form>
 </body>
 </html>

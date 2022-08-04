@@ -1,45 +1,54 @@
 from django.urls import reverse
-from django.http import HttpResponseRedirect, Http404
-from django.shortcuts import render
-from django.views import View
+from django.http import  HttpResponseRedirect, Http404
+from django.views.generic import ListView, CreateView, DetailView
+# from django.views.generic.detail import DetailView
+from order.models import Order
+from order.services.order_services import OrderService
+from order.forms import OrderCreateForm, PointOfIssueFornset
+from order.logic import OrderLogic    
 
-from order.services import OrderService
-from order.forms import OrderCreateForm
+class OrderCreate(CreateView):
+    form_class = OrderCreateForm
+    template_name = 'add_order.html'
+    order_logic = OrderLogic()
 
+    def get_context_data(self, **kwargs):
+        data = super(OrderCreate, self).get_context_data(**kwargs)
+        if self.request.method == 'POST':
+            data['form'] = OrderCreateForm(self.request.POST, self.request.FILES)
+            data['addresses'] = PointOfIssueFornset(self.request.POST)
+        else:
+            data['addresses'] = PointOfIssueFornset()
+        return data
 
-class OrderCreateView(View):
-    order_service  = OrderService()
-
-    def get(self, request):
-        order_create_form = OrderCreateForm()
-        context = {'form': order_create_form}
-        return render(request, 'add_order.html', context)
-
-    def post(self, request):
-        order_create_form = OrderCreateForm(request.POST)
-        if order_create_form.is_valid():
-            data = order_create_form.cleaned_data
-            file_name = self.order_service.write_file_addresses(
-                addresses=data['point_of_issue']
+    def form_valid(self, form):
+        context = self.get_context_data()
+        addresses = context['addresses']
+        if addresses.is_valid():
+            self.order_logic.create_order(
+                order_data=form.cleaned_data,
+                point_of_issue_data=addresses.cleaned_data
             )
-            data['issuing_addresses_file'] = file_name
-            self.order_service.add_order(data)
-            return HttpResponseRedirect(reverse('orders'))
-        return render(request, 'add_order.html', {'form': order_create_form})
+        return HttpResponseRedirect(reverse('orders'))
 
 
-class OrderView(View):
+class OrderView(ListView):
+    model = Order
+    template_name = 'orders.html'
+    order_service = OrderService()
+
+    def get_queryset(self):
+        return self.order_service.get_all_orders()
+
+
+class OrderDetailView(DetailView):
+    model = Order
+    template_name = 'detail_order.html'
+    pk_url_kwarg = 'order_id'
     order_service = OrderService()
     
-    def get(self, request):
-        orders = self.order_service.get_all_orders()
-        return render(request, 'orders.html', {'orders': orders})    
-
-
-class OrderDetailView(View):
-    order_service = OrderService()
-    def get(self, request, order_id):
-        order = self.order_service.get_order_by_order_id(order_id)
+    def get_object(self, queryset=None):
+        order = self.order_service.get_order_by_order_id(order_id=self.kwargs['order_id'])
         if not order:
-            raise Http404('Такаого заказа нет')
-        return render(request, 'detail_order.html', {'order': order})
+            raise Http404(f'order with not found')
+        return order
